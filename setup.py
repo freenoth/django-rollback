@@ -15,8 +15,11 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=(
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: WTFPL License',
+        'License :: WTFPL License',
         'Operating System :: OS Independent',
         'Framework :: Django :: 1.11',
     ),
+    install_requires=[
+        'GitPython>=2.1.8',
+    ],
 )
