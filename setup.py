@@ -21,6 +21,6 @@ setuptools.setup(
     ),
     install_requires=[
         'GitPython>=2.1.8',
-        'django=1.11'
+        'django==1.11'
     ],
 )
