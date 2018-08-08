@@ -14,7 +14,7 @@ It works with:
 
 First yoy need to install package with pip:
 ```bash
-pip install git+https://bitbucket.gcore.lu/scm/~aleksey.yakovlev_gcore.lu/django-auto-rollback.git@0.1.0
+pip install git+https://github.com/freenoth/django-rollback.git@0.1.0
 ```
 
 Then install it to your `INSTALLED_APPS`
