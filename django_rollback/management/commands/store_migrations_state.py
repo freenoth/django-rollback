@@ -37,4 +37,5 @@ class Command(BaseCommand):
         [(<id> : int, <app> : str, <name> : str), ...]
         """
         with connection.cursor() as cursor:
-            return cursor.execute(MIGRATIONS_STATE_SQL).fetchall()
+            cursor.execute(MIGRATIONS_STATE_SQL)
+            return cursor.fetchall()
