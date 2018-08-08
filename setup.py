@@ -7,11 +7,11 @@ setuptools.setup(
     name='django_rollback',
     version='0.1.0',
     author='Aleksey Yakovlev',
-    author_email='a_yakovlev@gcore.lu',
+    author_email='nothscr@gmail.com',
     description='Package to automate django rollback',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://bitbucket.gcore.lu/scm/~aleksey.yakovlev_gcore.lu/django-auto-rollback',
+    url='https://github.com/freenoth/django-rollback',
     packages=setuptools.find_packages(),
     classifiers=(
         'Programming Language :: Python :: 3',
