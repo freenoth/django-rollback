@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='django_rollback',
-    version='0.0.1',
+    version='0.1.0',
     author='Aleksey Yakovlev',
     author_email='a_yakovlev@gcore.lu',
-    description='Test package to automate django rollback',
+    description='Package to automate django rollback',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://bitbucket.gcore.lu/scm/~aleksey.yakovlev_gcore.lu/django-auto-rollback',
