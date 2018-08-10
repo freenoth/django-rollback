@@ -9,7 +9,7 @@ from django_rollback.sql import MIGRATIONS_STATE_SQL
 
 
 class Command(BaseCommand):
-    help = 'Store migrations state for current commit.'
+    help = 'Save migrations state for current commit.'
 
     def handle(self, *args, **options):
         commit = self.get_current_commit()

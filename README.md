@@ -1,9 +1,9 @@
 # Django auto rollback
-This package allow to easily manage apps migrations based on GIT repository (it use commits to store apps state).
-So you can easily return to any previous state that is stored in DB by one command.
+This package allow to easy manage apps migrations based on GIT repository (it use commits to save apps state).
+So you can return to any previous state that is saved in DB by one command.
 
 ## Version
-This is the first release of package. Current version is `0.1.1`
+Current version is `0.2.0`
 
 It works with:
 - django == 1.11
@@ -12,9 +12,9 @@ It works with:
 
 ## Installing
 
-First yoy need to install package with pip:
+First you need to install package with pip:
 ```bash
-pip install git+https://github.com/freenoth/django-rollback.git@0.1.1
+pip install git+https://github.com/freenoth/django-rollback.git@0.2.0
 ```
 
 Then install it to your `INSTALLED_APPS`
@@ -25,16 +25,16 @@ INSTALLED_APPS = [
 ]
 ```
 
-You are also should execute `./manage.py migrate` before using additional management commands.
+You are also should run `./manage.py migrate` before using additional management commands.
 
 ## Using
-There is only two commands to manage migrations state:
+There are two commands to manage migrations state:
 
-### Storing current state
+### Saving current state
 ```bash
-./manage.py store_migrations_state
+./manage.py save_migrations_state
 ```
-This command used to store current commit state to DB (it create new or update existing state).
+This command used to save apps migrations state of current commit to DB (it create new or update existing state).
 
 Successful output example below:
 ```bash
@@ -51,19 +51,18 @@ Help message below:
 usage: manage.py rollback_migrations [-t TAG] [-c COMMIT] [--fake]
 
 Rollback migrations state of all django apps to chosen tag or commit if
-previously stored.
+previously saved.
 
 optional arguments:
-  -t TAG, --tag TAG     Git tag in witch needs to rollback migrations.
+  -t TAG, --tag TAG     Git tag to which to rollback migrations.
   -c COMMIT, --commit COMMIT
-                        Git commit hash in witch needs to rollback migrations.
-  --fake                Used to block migrate commands execution, so it allow
-                        to only print info about processed actions without
-                        execution.
+                        Git commit hash to which to rollback migrations.
+  --fake                It allow to only print info about processed actions
+                        without execution (no changes for DB).
+
 ```
 
-You can use git commit hash (hex) directly.
-You don`t need to specify full commit hash, you just can use first letters.
+You can use git commit hash (hex) directly. And you don`t need to specify full commit hash, you just can use first letters.
 The commands below are equal:
 ```bash
 ./manage.py rollback_migrations -c 0e02e741c5953212428adc1cac9060b2a0b8626b
@@ -103,6 +102,6 @@ As you can see above, apps can be rollbacked to `zero` state too, if in previous
 
 ### Successful rollback conditions
 So rollback will be successfully finished if two conditions are satisfied:
-- state for current commit are stored (if not - use `./manage.py store_migrations_state` command)
-- state for specified commit or commit witch relates to specified tag was stored in the past
+- state for current commit was saved (if not - use `./manage.py save_migrations_state` command)
+- state for specified commit or commit which relates to specified tag was saved in the past
  

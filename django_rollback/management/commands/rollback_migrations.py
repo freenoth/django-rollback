@@ -14,14 +14,14 @@ MigrationRecord = namedtuple('MigrationRecord', ['id', 'app', 'name'])
 
 
 class Command(BaseCommand):
-    help = 'Rollback migrations state of all django apps to chosen tag or commit if previously stored.'
+    help = 'Rollback migrations state of all django apps to chosen tag or commit if previously saved.'
 
     def add_arguments(self, parser):
-        parser.add_argument('-t', '--tag', type=str, help='Git tag in witch needs to rollback migrations.')
-        parser.add_argument('-c', '--commit', type=str, help='Git commit hash in witch needs to rollback migrations.')
+        parser.add_argument('-t', '--tag', type=str, help='Git tag to which to rollback migrations.')
+        parser.add_argument('-c', '--commit', type=str, help='Git commit hash to which to rollback migrations.')
         parser.add_argument('--fake', action='store_true',
-                            help='Used to block migrate commands execution, so it allow to only print info '
-                                 'about processed actions without execution.')
+                            help='It allow to only print info about processed actions without execution '
+                                 '(no changes for DB).')
 
     def handle(self, *args, **options):
         other_commit = self.get_commit_from_options(options)
