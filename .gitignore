@@ -1,6 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea
 manage.py
-django-auto-rollback
+django-rollback
 __pycache__
 db.sqlite3

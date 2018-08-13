@@ -3,7 +3,7 @@ This package allow to easy manage apps migrations based on GIT repository (it us
 So you can return to any previous state that is saved in DB by one command.
 
 ## Version
-Current version is `0.2.0`
+Current version is `0.2.1`
 
 It works with:
 - django == 1.11
@@ -14,7 +14,7 @@ It works with:
 
 First you need to install package with pip:
 ```bash
-pip install git+https://github.com/freenoth/django-rollback.git@0.2.0
+pip install git+https://github.com/freenoth/django-rollback.git@0.2.1
 ```
 
 Then install it to your `INSTALLED_APPS`
@@ -28,11 +28,22 @@ INSTALLED_APPS = [
 You are also should run `./manage.py migrate` before using additional management commands.
 
 ## Using
-There are two commands to manage migrations state:
+There are two commands to manage migrations state.
+
+For both commands you can pass the `PATH` argument to specify path to git repository directory (local). Default path is current dir : `'.'`.
 
 ### Saving current state
 ```bash
 ./manage.py save_migrations_state
+```
+Help message below:
+```bash
+usage: manage.py save_migrations_state [-p PATH]
+
+Save migrations state for current commit.
+
+optional arguments:
+  -p PATH, --path PATH  Git repository path.
 ```
 This command used to save apps migrations state of current commit to DB (it create new or update existing state).
 
@@ -48,7 +59,7 @@ Successfully created for commit "84e47461a95fa325d9e933bbe8cca8c52bbea203".
 ```
 Help message below:
 ```bash
-usage: manage.py rollback_migrations [-t TAG] [-c COMMIT] [--fake]
+usage: manage.py rollback_migrations [-t TAG] [-c COMMIT] [-p PATH] [--fake]
 
 Rollback migrations state of all django apps to chosen tag or commit if
 previously saved.
@@ -57,6 +68,7 @@ optional arguments:
   -t TAG, --tag TAG     Git tag to which to rollback migrations.
   -c COMMIT, --commit COMMIT
                         Git commit hash to which to rollback migrations.
+  -p PATH, --path PATH  Git repository path.
   --fake                It allow to only print info about processed actions
                         without execution (no changes for DB).
 

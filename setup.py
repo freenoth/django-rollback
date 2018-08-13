@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='django_rollback',
-    version='0.2.0',
+    version='0.2.1',
     author='Aleksey Yakovlev',
     author_email='nothscr@gmail.com',
     description='Package to automate django rollback',

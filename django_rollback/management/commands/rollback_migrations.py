@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from django_rollback.models import AppsState
 
+DEFAULT_REPO_PATH = '.'
 COMMIT_MAX_LENGTH = 40
 MIGRATE_COMMAND = 'migrate'
 
@@ -19,13 +20,16 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-t', '--tag', type=str, help='Git tag to which to rollback migrations.')
         parser.add_argument('-c', '--commit', type=str, help='Git commit hash to which to rollback migrations.')
+        parser.add_argument('-p', '--path', type=str, help='Git repository path.')
         parser.add_argument('--fake', action='store_true',
                             help='It allow to only print info about processed actions without execution '
                                  '(no changes for DB).')
 
     def handle(self, *args, **options):
-        other_commit = self.get_commit_from_options(options)
-        current_commit = self.get_current_commit()
+        repo_path = options.get('path', DEFAULT_REPO_PATH)
+
+        other_commit = self.get_commit_from_options(options, path=repo_path)
+        current_commit = self.get_current_commit(path=repo_path)
 
         current_data = self.get_migrations_data_from_commit(current_commit)
         other_data = self.get_migrations_data_from_commit(other_commit)
@@ -36,7 +40,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('Rollback successfully finished.'))
 
-    def get_commit_from_options(self, options):
+    def get_commit_from_options(self, options, path):
         if not options['tag'] and not options['commit']:
             raise CommandError('Tag or commit should be described by -t or -c arguments.')
 
@@ -48,7 +52,7 @@ class Command(BaseCommand):
 
         tag = options['tag']
         try:
-            repo = git.Repo('.')
+            repo = git.Repo(path)
             if tag not in repo.tags:
                 raise CommandError(f'Can not find tag `{tag}` in git repository.')
 
@@ -61,9 +65,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'WARNING: an error occurred while working with git repo!'))
             raise CommandError(err)
 
-    def get_current_commit(self):
+    def get_current_commit(self, path):
         try:
-            repo = git.Repo('.')
+            repo = git.Repo(path)
             return repo.head.commit.hexsha
 
         except ValueError as err:
