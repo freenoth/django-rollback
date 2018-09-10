@@ -1,46 +1,43 @@
 import json
 
-import git
-from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
-
+from django_rollback.management.base import BaseRollbackCommand
 from django_rollback.models import AppsState
-from django_rollback.sql import MIGRATIONS_STATE_SQL
-
-DEFAULT_REPO_PATH = '.'
 
 
-class Command(BaseCommand):
-    help = 'Save migrations state for current commit.'
-
-    def add_arguments(self, parser):
-        parser.add_argument('-p', '--path', type=str, help='Git repository path.')
+class Command(BaseRollbackCommand):
+    help = 'Save migrations state for current commit. It also check if commit already exists and ' \
+           'print warning if it`s not the latest state that may be a symptom of inconsistent state for migrations.'
 
     def handle(self, *args, **options):
-        commit = self.get_current_commit(path=options.get('path', DEFAULT_REPO_PATH))
+        self.configure_logger(options)
+
+        commit = self.get_current_commit(path=options['path'])
         state_data = self.get_current_migrations_state()
 
-        obj, created = AppsState.objects.update_or_create(commit=commit,
-                                                          defaults={'migrations': json.dumps(state_data)})
+        obj, created = AppsState.objects.get_or_create(commit=commit, defaults={'migrations': json.dumps(state_data)})
+        last_state = self.get_last_apps_state()
+        if created:
+            message = f'Data = {state_data}.\n Successfully created for commit "{commit}".'
+            self.stdout.write(self.style.SUCCESS(message))
+            if self._logger:
+                self._logger.info(message)
 
-        self.stdout.write(self.style.SUCCESS(f'Data = {state_data}.\n'
-                                             f'Successfully {"created" if created else "updated"} '
-                                             f'for commit "{commit}".\n'))
+        else:
+            if commit == last_state.commit:
+                message = (f'State for current commit "{commit}" already exists with data:\n'
+                           f'{last_state.migrations}\nCreated {obj.timestamp}\n'
+                           f'This is the latest state for this service. So all is fine.')
+                self.stdout.write(self.style.SUCCESS(message))
+                if self._logger:
+                    self._logger.info(message)
 
-    def get_current_commit(self, path):
-        try:
-            repo = git.Repo(path)
-            return repo.head.commit.hexsha
-        except ValueError as err:
-            self.stdout.write(self.style.ERROR(f'WARNING: an error occurred while working with git repo!'))
-            raise CommandError(err)
-
-    @staticmethod
-    def get_current_migrations_state():
-        """
-        return a data in format:
-        [(<id> : int, <app> : str, <name> : str), ...]
-        """
-        with connection.cursor() as cursor:
-            cursor.execute(MIGRATIONS_STATE_SQL)
-            return cursor.fetchall()
+            else:
+                message = (f'State for current commit "{commit}" already exists.\n'
+                           f'Created {obj.timestamp}\n'
+                           f'This is NOT the latest state for this service.\n'
+                           f'Latest: commit "{last_state.commit}", created {last_state.timestamp}.\n'
+                           f'Did you forget to perform rollback before changing service version?\n'
+                           f'So migrations may be in inconsistent state, please check it!')
+                self.stdout.write(self.style.WARNING(message))
+                if self._logger:
+                    self._logger.warning(message)
