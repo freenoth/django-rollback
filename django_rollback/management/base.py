@@ -147,7 +147,7 @@ class BaseRollbackCommand(BaseCommand):
 
     def make_the_last_state_for_commit(self, commit):
         apps_state = self.get_apps_state_by_commit(commit)
-        AppsState.objects.filter(id_gt=apps_state.id).delete()
+        AppsState.objects.filter(id__gt=apps_state.id).delete()
 
         message = f'state for commit "{commit}" now is the last state in DB'
         self.stdout.write(f'>>> {message}')
