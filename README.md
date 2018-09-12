@@ -3,7 +3,7 @@ This package allow to easy manage apps migrations based on GIT repository (it us
 So you can return to any previous state that is saved in DB by one command.
 
 ## Version
-Current version is `0.3.0`
+Current version is `0.3.1`
 
 It works with:
 - django >= 1.11.3
@@ -14,7 +14,7 @@ It works with:
 
 First you need to install package with pip:
 ```bash
-pip install git+https://github.com/freenoth/django-rollback.git@0.3.0
+pip install git+https://github.com/freenoth/django-rollback.git@0.3.1
 ```
 
 Then install it to your `INSTALLED_APPS`
