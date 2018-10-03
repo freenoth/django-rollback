@@ -86,7 +86,8 @@ class Command(BaseRollbackCommand):
         if not options['fake']:
             self.make_the_last_state_for_commit(other_commit)
 
-        self.stdout.write(self.style.SUCCESS('Rollback successfully finished.'))
+        fake_msg = f' with `--fake` option' if options['fake'] else ''
+        self.stdout.write(self.style.SUCCESS(f'Rollback successfully finished{fake_msg}.'))
 
     def get_other_commit(self, options, path):
         commit_arg = options['commit']
