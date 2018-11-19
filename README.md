@@ -153,7 +153,7 @@ So rollback will be successfully finished if two conditions are satisfied:
 ## Usage example
 For example, we have a django-application packed with Docker. We have a release cycle and deploy docker images based on some version of our source code. Building images includes copying all source code data (including `.git` directory), so `django_rollback` will have direct access to local git repository to identify or search commits, tags, etc.
 
-Docker allows you to use some `entrypoint` that can be `.sh` file. So we have something like that:
+Docker allows you to use some `entrypoint` that can be `.sh` file. So we have `Dockerfile` like that:
 ```dockerfile
 FROM python:3.6
 ENTRYPOINT ["dumb-init", "--"]
@@ -170,8 +170,8 @@ And our `start.sh` entrypoint can be something like this:
 ```bash
 #!/bin/bash
 
-./_manage.py migrate
-./_manage.py save_migrations_state -l "django.slack_logging" --log-level INFO --log-diff
+./manage.py migrate
+./manage.py save_migrations_state -l "django.slack_logging" --log-level INFO --log-diff
 
 gunicorn --bind 0.0.0.0:8000 -k eventlet -w $WORKER_COUNT --max-requests $MAX_REQUESTS --reload app.wsgi:application
 
@@ -189,7 +189,7 @@ You just can use some `.sh` script to run rollback migrations or manually run ma
 Script `rollback.sh` can be like this:
 ```bash
 #!/usr/bin/env bash
-./_manage.py rollback_migrations "$@" -l "django.slack_logging" --log-level INFO
+./manage.py rollback_migrations "$@" -l "django.slack_logging" --log-level INFO
 
 ```
 So in case of rollback you also able to monitoring what`s going on: which migrations are unapplying and which version of source code new DB state corresponds.
