@@ -1,3 +1,5 @@
+import logging
+
 import git
 from django.core.management.base import CommandError
 
@@ -28,16 +30,13 @@ class Command(BaseRollbackCommand):
         fake_arg = options['fake']
 
         if list_arg and (tag_arg is not None or commit_arg is not None or fake_arg):
-            message = f'--list arg should be used without git args (tag, commit or fake).'
-            if self._logger:
-                self._logger.warning(message)
-            raise CommandError(message)
+            self.add_log(f'--list arg should be used without git args (tag, commit or fake).',
+                         log_level=logging.ERROR)
+            raise CommandError()
 
         if tag_arg is not None and commit_arg is not None:
-            message = f'tag and commit args can not used together.'
-            if self._logger:
-                self._logger.warning(message)
-            raise CommandError(message)
+            self.add_log(f'tag and commit args can not used together.', log_level=logging.ERROR)
+            raise CommandError()
 
     def validate_current_commit(self, commit):
         """
@@ -46,50 +45,50 @@ class Command(BaseRollbackCommand):
         """
         last_state = self.get_last_apps_state()
         if not last_state:
-            message = f'There is no saved states in DB. Rollback procedure impossible.'
-            if self._logger:
-                self._logger.warning(message)
-            raise CommandError(message)
+            self.add_log(f'There is no saved states in DB. Rollback procedure impossible.', log_level=logging.ERROR)
+            raise CommandError()
 
         if last_state.commit != commit:
             message = f'Current commit is not the latest in DB. Migrations state may be in inconsistent state. ' \
                       f'Rollback procedure impossible.'
-            if self._logger:
-                self._logger.warning(message)
-            raise CommandError(message)
+            self.add_log(message, log_level=logging.ERROR)
+            raise CommandError()
 
-    def handle(self, *args, **options):
-        self.configure_logger(options)
+    def _handle(self, *args, **options):
         self.validate_arguments(options)
 
         if options['list']:
-            return self.print_states_list(path=options['path'])
+            return self.print_states_list()
 
-        current_commit = self.get_current_commit(path=options['path'])
+        if options['fake']:
+            self.add_log('Running rollback with --fake option.', style_func=self.style.WARNING,
+                         log_level=logging.WARNING)
+
+        current_commit = self.get_current_commit()
         self.validate_current_commit(current_commit)
 
-        other_commit = self.get_other_commit(options, path=options['path'])
+        other_commit = self.get_other_commit(options)
         if not other_commit:
             other_commit = self.get_previous_commit()
+        else:
+            other_commit = self.search_commit(other_commit)
 
         current_data = self.get_migrations_data_by_commit(current_commit)
         other_data = self.get_migrations_data_by_commit(other_commit)
 
         diff = self.get_migrations_diff(current=current_data, other=other_data)
 
-        message = f'Running rollback from commit "{current_commit}" to commit "{other_commit}".'
-        self.stdout.write(message)
-        if self._logger:
-            self._logger.info(message)
+        self.add_log(f'Running rollback from commit {self.get_commit_info(current_commit)} '
+                     f'to commit {self.get_commit_info(other_commit)}.')
 
         self.run_rollback(diff, fake=options['fake'])
         if not options['fake']:
             self.make_the_last_state_for_commit(other_commit)
 
-        fake_msg = f' with `--fake` option' if options['fake'] else ''
-        self.stdout.write(self.style.SUCCESS(f'Rollback successfully finished{fake_msg}.'))
+        fake_msg = ' with `--fake` option' if options['fake'] else ''
+        self.add_log(f'Rollback successfully finished{fake_msg}.', style_func=self.style.SUCCESS)
 
-    def get_other_commit(self, options, path):
+    def get_other_commit(self, options):
         commit_arg = options['commit']
         tag_arg = options['tag']
 
@@ -98,12 +97,10 @@ class Command(BaseRollbackCommand):
 
         if tag_arg:
             try:
-                repo = git.Repo(path)
+                repo = git.Repo(self._repo_path)
                 if tag_arg not in repo.tags:
-                    message = f'Can not find tag `{tag_arg}` in git repository.'
-                    if self._logger:
-                        self._logger.warning(message)
-                    raise CommandError(message)
+                    self.add_log(f'Can not find tag `{tag_arg}` in git repository.', log_level=logging.ERROR)
+                    raise CommandError()
 
                 return repo.tags[tag_arg].commit.hexsha
 
@@ -111,51 +108,16 @@ class Command(BaseRollbackCommand):
                 raise err
 
             except Exception as err:
-                message = f'An error occurred while working with git repo!'
-                self.stdout.write(self.style.ERROR(message))
-                if self._logger:
-                    self._logger.error(message + f'\n{__name__}')
+                self.add_log(f'An error occurred while working with git repo!', style_func=self.style.ERROR,
+                             log_level=logging.ERROR, exc_info=True)
                 raise CommandError(err)
 
         return None
 
-    def get_previous_commit(self):
-        """
-        current commit should be already validated
-        so we are sure that the last state linked to current commit
-        need to select previous commit
-        """
-
-        if AppsState.objects.count() < 2:
-            message = f'There is only one state in DB. Can`t identify previous state. Rollback procedure impossible.'
-            if self._logger:
-                self._logger.warning(message)
-            raise CommandError(message)
-
-        return AppsState.objects.all().order_by('-timestamp')[1].commit
-
-    def get_repo_tags(self, path):
-        try:
-            repo = git.Repo(path)
-            result = {}
-            for tag in repo.tags:
-                result.setdefault(tag.commit.hexsha, [])
-                result[tag.commit.hexsha].append(tag.name)
-
-            return result
-
-        except Exception:
-            message = f'An error occurred while working with git repo during getting Tags map.'
-            self.stdout.write(self.style.WARNING(message))
-            if self._logger:
-                self._logger.error(message + f'\n{__name__}')
-            return {}
-
-    def print_states_list(self, path):
+    def print_states_list(self,):
         format_string = '{:>8}  {:<20}   {:<40}   {}'  # timestamp commit tag
 
-        tags = self.get_repo_tags(path=path)
-        current_commit = self.get_current_commit(path=path)
+        current_commit = self.get_current_commit()
 
         self.stdout.write(f'Saved states in database sorted from newer to older:')
         self.stdout.write(format_string.format('MARK    ', 'TIMESTAMP v', 'COMMIT', 'TAGS'))
@@ -163,7 +125,7 @@ class Command(BaseRollbackCommand):
         queryset = AppsState.objects.all().order_by('-timestamp')
         for state in queryset:
             current_mark = 'curr >>>' if state.commit == current_commit else ''
-            commit_tags = sorted(tags.get(state.commit, []), reverse=True)
+            commit_tags = sorted(self.repo_tags.get(state.commit, []), reverse=True)
             commit_tags = ', '.join(commit_tags) if commit_tags else ''
             self.stdout.write(
                 f'{format_string.format(current_mark, str(state.timestamp)[:19], state.commit, commit_tags)}'

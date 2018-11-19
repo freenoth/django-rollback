@@ -5,26 +5,26 @@ from django core table 'django_migrations'.
 
 MIGRATIONS_STATE_SQL = """
 with migrations AS (select
-                      t.id,
-                      t.app,
-                      t.name
-                    from django_migrations t
+                      dm.id,
+                      dm.app,
+                      dm.name
+                    from django_migrations dm
 ), max_migrations as (
     select
-      t.app,
-      max(t.id) as id
-    from migrations t
-    group by t.app
+      ms.app,
+      max(ms.id) as id
+    from migrations ms
+    group by ms.app
 )
 select
-  t.id,
-  t.app,
-  t.name
-from migrations t
+  ms.id,
+  ms.app,
+  ms.name
+from migrations ms
 where exists(
     select 1
-    from max_migrations tt
-    where tt.app = t.app and tt.id = t.id
+    from max_migrations mms
+    where mms.app = ms.app and mms.id = ms.id
 )
-order by t.app;
+order by ms.app;
 """
